@@ -65,7 +65,7 @@ function show_position(p)
 	
 	var polylineCoords = [
 <?php
-	$query = mysql_query("SELECT * FROM saved");
+	$query = mysql_query("SELECT * FROM saved ORDER BY id");
 	while($sqldata = mysql_fetch_array($query)){
 		echo "new google.maps.LatLng(".$sqldata["lat"].", ".$sqldata["lon"]."),\n";
 	}
