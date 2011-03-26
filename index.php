@@ -1,3 +1,8 @@
+<?php
+include("dbconnect.php");
+?>
+
+
 <html>
 <head>
 <meta name = "viewport" content = "width = device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;">		
@@ -34,9 +39,15 @@ function initialize()
 function show_position(p)
 {
 	document.getElementById('current').innerHTML="latitude="+p.coords.latitude+" longitude="+p.coords.longitude;
+	
+	document.getElementById('flat').value = p.coords.latitude;
+	document.getElementById('flon').value = p.coords.longitude;
+	
+	
+	
 	var pos=new google.maps.LatLng(p.coords.latitude,p.coords.longitude);
 	map.setCenter(pos);
-	map.setZoom(14);
+	map.setZoom(13);
 
 	var infowindow = new google.maps.InfoWindow({
 	    content: "<strong>latitude="+p.coords.latitude+" longitude="+p.coords.longitude+"</strong>"
@@ -52,7 +63,25 @@ function show_position(p)
 	  infowindow.open(map,marker);
 	});
 	
+	var polylineCoords = [
+<?php
+	$query = mysql_query("SELECT * FROM saved");
+	while($sqldata = mysql_fetch_array($query)){
+		echo "new google.maps.LatLng(".$sqldata["lat"].", ".$sqldata["lon"]."),\n";
+	}
+	mysql_close($sql);
+?>
+];
+
+	var pathPaint = new google.maps.Polyline({
+		path: polylineCoords,
+		strokeColor: "#FF0000",
+		strokeOpacity: 1.0,
+		strokeWeight: 2
+	});
+	pathPaint.setMap(map);
 }
+
 </script >
 <style>
 	body {font-family: Helvetica;font-size:11pt;padding:0px;margin:0px}
@@ -60,7 +89,12 @@ function show_position(p)
 </style>
 </head>
 <body onload="initialize_map();initialize()">
-	<div id="current">Initializing...</div>
+	<div id="current">Init...</div>
+	<form name="saveForm" method="post" action="point_parser.php">
+	Lat: <input type="text" name="lat" id="flat" /><br />
+	Lon: <input type="text" name="lon" id="flon" /><br />
+	<input type="submit" value="Save Point" />
+	</form>
 	<div id="map_canvas" style="width:320px; height:350px"></div>
 </body>
 </html>
