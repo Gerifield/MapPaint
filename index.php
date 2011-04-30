@@ -9,8 +9,14 @@ include("dbconnect.php");
 <script src="http://code.google.com/apis/gears/gears_init.js" type="text/javascript" charset="utf-8"></script>
 <script src="js/geo.js" type="text/javascript" charset="utf-8"></script>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script>
+
 
 <script>
+var polylineCoords;
+var pathPaint;
+var map;
+
 function initialize_map()
 {
     var myOptions = {
@@ -63,7 +69,7 @@ function show_position(p)
 	  infowindow.open(map,marker);
 	});
 	
-	var polylineCoords = [
+	polylineCoords = [
 <?php
 	$query = mysql_query("SELECT * FROM saved ORDER BY id");
 	while($sqldata = mysql_fetch_array($query)){
@@ -73,7 +79,7 @@ function show_position(p)
 ?>
 ];
 
-	var pathPaint = new google.maps.Polyline({
+	pathPaint = new google.maps.Polyline({
 		path: polylineCoords,
 		strokeColor: "#FF0000",
 		strokeOpacity: 1.0,
@@ -82,15 +88,45 @@ function show_position(p)
 	pathPaint.setMap(map);
 }
 
+$(document).ready(function(){
+	initialize_map();
+	initialize();
+});
+
+function pointRecvParse(data, lineArray, addOne){
+	var items = data.split(";");
+	
+	if(!addOne){
+		lineArray = new Array(); //multiple item, reload the line array
+	}
+	
+	
+	for(i=0; i<items.length-1; i++){ //the string ends with a last ;
+		it = items[i].split("|");
+		lineArray.push(new google.maps.LatLng(it[0],it[1]));
+	}
+}
+
+function ajaxFormSend(){
+	$.post("point_parser.php?mode=insert", $("#mySaveForm").serialize(),
+	function(data){
+		pointRecvParse(data, polylineCoords, true);
+		pathPaint.setPath(polylineCoords);
+		pathPaint.setMap(map);
+	})
+	return false;
+}
+
+
 </script >
 <style>
 	body {font-family: Helvetica;font-size:11pt;padding:0px;margin:0px}
 	#current {font-size:10pt;padding:5px;}	
 </style>
 </head>
-<body onload="initialize_map();initialize()">
+<body>
 	<div id="current">Init...</div>
-	<form name="saveForm" method="post" action="point_parser.php">
+	<form name="saveForm" id="mySaveForm" method="post" action="point_parser.php?mode=insert" onsubmit="return ajaxFormSend();">
 	Lat: <input type="text" name="lat" id="flat" /><br />
 	Lon: <input type="text" name="lon" id="flon" /><br />
 	<input type="submit" value="Save Point" />
